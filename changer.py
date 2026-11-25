@@ -7,7 +7,12 @@ from impacket.smbconnection import SMBConnection
 from impacket.dcerpc.v5.rpcrt import DCERPCException
 from impacket.dcerpc.v5 import samr, scmr
 from impacket.dcerpc.v5.dcomrt import DCOMConnection
-from impacket.dcerpc.v5.dcom.wmi import WMI
+from impacket.dcerpc.v5.dcom.wmi import (
+    IWbemLevel1Login,
+    IWbemServices,
+    CLSID_WMILevel1Login,
+    IID_IWbemLevel1Login
+)
 from config import SMB_TIMEOUT, MAX_RETRIES, CACHE_FILE, PASSWORD_LENGTH, SPECIAL_CHARS
 
 
@@ -90,8 +95,8 @@ def change_password_via_wmi(ip, domain, username, old_pass, new_pass):
         try:
             auth = f"{domain}\\{username}" if domain else username
             dcom = DCOMConnection(ip, auth, old_pass, "", oxidResolver=True, timeout=SMB_TIMEOUT)
-            iInterface = dcom.CoCreateInstanceEx(WMI.CLSID_WMILevel1Login, WMI.IID_IWbemLevel1Login)
-            iWbemLevel1Login = WMI.IWbemLevel1Login(iInterface)
+            iInterface = dcom.CoCreateInstanceEx(CLSID_WMILevel1Login, IID_IWbemLevel1Login)
+            iWbemLevel1Login = IWbemLevel1Login(iInterface)
             iWbemServices = iWbemLevel1Login.NTLMLogin("root\\cimv2", "", "")
             iWbemLevel1Login.RemRelease()
             
