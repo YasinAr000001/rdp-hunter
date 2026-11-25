@@ -7,12 +7,18 @@ from impacket.smbconnection import SMBConnection
 from impacket.dcerpc.v5.rpcrt import DCERPCException
 from impacket.dcerpc.v5 import samr, scmr
 from impacket.dcerpc.v5.dcomrt import DCOMConnection
-from impacket.dcerpc.v5.dcom.wmi import (
-    IWbemLevel1Login,
-    IWbemServices,
-    CLSID_WMILevel1Login,
-    IID_IWbemLevel1Login
-)
+
+# WMI imports - optional, fallback if unavailable
+try:
+    from impacket.dcerpc.v5.dcom.wmi import (
+        IWbemLevel1Login,
+        IWbemServices,
+        CLSID_WMILevel1Login,
+        IID_IWbemLevel1Login
+    )
+    WMI_AVAILABLE = True
+except ImportError:
+    WMI_AVAILABLE = False
 from config import SMB_TIMEOUT, MAX_RETRIES, CACHE_FILE, PASSWORD_LENGTH, SPECIAL_CHARS
 
 
@@ -91,6 +97,9 @@ def change_password_via_samr(ip, domain, username, old_pass, new_pass):
 
 
 def change_password_via_wmi(ip, domain, username, old_pass, new_pass):
+    if not WMI_AVAILABLE:
+        return False, "WMI not available in this impacket version"
+    
     for attempt in range(MAX_RETRIES):
         try:
             auth = f"{domain}\\{username}" if domain else username
