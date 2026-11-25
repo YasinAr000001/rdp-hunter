@@ -6,19 +6,6 @@ from datetime import datetime
 from impacket.smbconnection import SMBConnection
 from impacket.dcerpc.v5.rpcrt import DCERPCException
 from impacket.dcerpc.v5 import samr, scmr
-from impacket.dcerpc.v5.dcomrt import DCOMConnection
-
-# WMI imports - optional, fallback if unavailable
-try:
-    from impacket.dcerpc.v5.dcom.wmi import (
-        IWbemLevel1Login,
-        IWbemServices,
-        CLSID_WMILevel1Login,
-        IID_IWbemLevel1Login
-    )
-    WMI_AVAILABLE = True
-except ImportError:
-    WMI_AVAILABLE = False
 from config import SMB_TIMEOUT, MAX_RETRIES, CACHE_FILE, PASSWORD_LENGTH, SPECIAL_CHARS
 
 
@@ -96,47 +83,8 @@ def change_password_via_samr(ip, domain, username, old_pass, new_pass):
     return False, "SAMR max retries exceeded"
 
 
-def change_password_via_wmi(ip, domain, username, old_pass, new_pass):
-    if not WMI_AVAILABLE:
-        return False, "WMI not available in this impacket version"
-    
-    for attempt in range(MAX_RETRIES):
-        try:
-            auth = f"{domain}\\{username}" if domain else username
-            dcom = DCOMConnection(ip, auth, old_pass, "", oxidResolver=True, timeout=SMB_TIMEOUT)
-            iInterface = dcom.CoCreateInstanceEx(CLSID_WMILevel1Login, IID_IWbemLevel1Login)
-            iWbemLevel1Login = IWbemLevel1Login(iInterface)
-            iWbemServices = iWbemLevel1Login.NTLMLogin("root\\cimv2", "", "")
-            iWbemLevel1Login.RemRelease()
-            
-            cmd = f"net user {username} {new_pass}"
-            result = iWbemServices.ExecMethod("Win32_Process", "Create", {"CommandLine": cmd})
-            return_code = result[0]['ReturnValue']
-            
-            dcom.disconnect()
-            
-            if return_code == 0:
-                return True, "Success (WMI)"
-            else:
-                return False, f"WMI command failed with code {return_code}"
-                
-        except DCERPCException as e:
-            if attempt == MAX_RETRIES - 1:
-                return False, f"WMI RPC error: {str(e)}"
-            time.sleep(1)
-        except Exception as e:
-            if attempt == MAX_RETRIES - 1:
-                return False, f"WMI error: {str(e)}"
-            time.sleep(1)
-    return False, "WMI max retries exceeded"
-
-
 def change_password_via_smb(ip, domain, username, old_pass, new_pass):
-    success, msg = change_password_via_samr(ip, domain, username, old_pass, new_pass)
-    if success:
-        return success, msg
-    
-    return change_password_via_wmi(ip, domain, username, old_pass, new_pass)
+    return change_password_via_samr(ip, domain, username, old_pass, new_pass)
 
 
 def process_rdp(ip, domain, username, old_pass):
