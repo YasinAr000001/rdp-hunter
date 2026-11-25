@@ -5,6 +5,7 @@ API_HASH = os.getenv("API_HASH", "")
 CHANNEL_USERNAMES = os.getenv("CHANNEL_USERNAMES", "")
 SESSION_NAME = os.getenv("SESSION_NAME", "rdp_hunter")
 SAVED_MESSAGES = os.getenv("SAVED_MESSAGES", "me")
+PHONE_NUMBER = os.getenv("PHONE_NUMBER", "")
 
 # Password generation
 PASSWORD_LENGTH = 14

@@ -6,7 +6,7 @@ from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
 from config import (
     API_ID, API_HASH, CHANNEL_USERNAMES, SESSION_NAME,
-    SAVED_MESSAGES, get_channels
+    SAVED_MESSAGES, PHONE_NUMBER, get_channels
 )
 from changer import parse_credentials, process_rdp, generate_password
 
@@ -70,7 +70,10 @@ async def main():
     print("[*] rdp-hunter starting...")
     print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}")
     
-    await client.start()
+    if PHONE_NUMBER:
+        await client.start(phone=PHONE_NUMBER)
+    else:
+        await client.start()
     print("[*] Connected. Running 24/7...")
     await client.run_until_disconnected()
 
