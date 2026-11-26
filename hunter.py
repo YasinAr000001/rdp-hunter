@@ -2,6 +2,7 @@ import os
 import asyncio
 import json
 from datetime import datetime
+from aiohttp import web
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
@@ -17,6 +18,10 @@ async def send_to_saved(client, text):
         await client.send_message(SAVED_MESSAGES, text)
     except Exception:
         pass
+
+
+async def health_check(request):
+    return web.Response(text="OK")
 
 
 def format_result(record):
@@ -81,6 +86,15 @@ async def main():
     
     print("[*] rdp-hunter starting...")
     print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}")
+    
+    # Start health check server for Railway
+    app = web.Application()
+    app.router.add_get('/health', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', int(os.getenv('PORT', '8080')))
+    await site.start()
+    print("[*] Health check server on port", os.getenv('PORT', '8080'))
     
     if BOT_TOKEN:
         await client.start(bot_token=BOT_TOKEN)
