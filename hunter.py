@@ -1,3 +1,4 @@
+print("[STARTUP] hunter.py loading...")
 import os
 import asyncio
 import json
@@ -11,6 +12,8 @@ from config import (
     SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, BOT_TOKEN, get_channels
 )
 from changer import parse_credentials, process_rdp, generate_password
+
+print("[STARTUP] Imports done, starting main...")
 
 
 async def send_to_saved(client, text):
