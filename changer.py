@@ -1,6 +1,7 @@
 import json
 import random
 import string
+import socket
 from datetime import datetime
 from impacket.smbconnection import SMBConnection
 from impacket.dcerpc.v5.rpcrt import DCERPCException
@@ -76,7 +77,19 @@ def change_password_via_samr(ip, domain, username, old_pass, new_pass):
         return False, f"SAMR connection error: {str(e)}"
 
 
+def check_port_445(ip, timeout=2):
+    """Quick TCP check if port 445 is open"""
+    try:
+        sock = socket.create_connection((ip, 445), timeout=timeout)
+        sock.close()
+        return True
+    except Exception:
+        return False
+
+
 def change_password_via_smb(ip, domain, username, old_pass, new_pass):
+    if not check_port_445(ip, timeout=2):
+        return False, "Port 445 closed/filtered"
     return change_password_via_samr(ip, domain, username, old_pass, new_pass)
 
 
