@@ -19,8 +19,11 @@ print("[STARTUP] Imports done, starting main...", flush=True)
 async def send_to_saved(client, text):
     try:
         await client.send_message(SAVED_MESSAGES, text)
-    except Exception:
-        pass
+        print(f"[DEBUG] Message sent to {SAVED_MESSAGES}", flush=True)
+    except Exception as e:
+        print(f"❌ SEND ERROR to {SAVED_MESSAGES}: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
 
 
 def run_health_server(port):
