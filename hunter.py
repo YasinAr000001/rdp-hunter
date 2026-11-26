@@ -131,6 +131,18 @@ async def main():
             await client.start()
         
         print("[*] Connected. Running 24/7...", flush=True)
+        
+        # Test results channel
+        print("[*] Testing results channel...", flush=True)
+        test_msg = (
+            "🧪 **RDP Hunter Test**\n"
+            f"✅ Bot started: {datetime.utcnow().isoformat()}Z\n"
+            f"📡 Monitoring: {', '.join(channels)}\n"
+            "🤖 Ready to catch RDPs!"
+        )
+        await send_to_saved(client, test_msg)
+        print("[*] Test message sent to results channel", flush=True)
+        
         await client.run_until_disconnected()
     except Exception as e:
         print(f"❌ STARTUP ERROR: {e}", flush=True)
