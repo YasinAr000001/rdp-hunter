@@ -9,7 +9,7 @@ from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
 from config import (
     API_ID, API_HASH, CHANNEL_USERNAMES, SESSION_NAME,
-    SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, BOT_TOKEN, get_channels
+    SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, BOT_TOKEN, get_channels, MAX_CONCURRENT
 )
 from changer import parse_credentials, process_rdp, generate_password
 
@@ -93,7 +93,7 @@ async def main():
         print("[*] Using file session")
     
     # Limit concurrent SMB connections
-    smb_semaphore = asyncio.Semaphore(3)
+    smb_semaphore = asyncio.Semaphore(MAX_CONCURRENT)
     
     @client.on(events.NewMessage(chats=channels))
     async def handler(event):

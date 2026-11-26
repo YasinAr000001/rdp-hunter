@@ -1,12 +1,11 @@
 import json
 import random
 import string
-import time
 from datetime import datetime
 from impacket.smbconnection import SMBConnection
 from impacket.dcerpc.v5.rpcrt import DCERPCException
 from impacket.dcerpc.v5 import samr, scmr
-from config import SMB_TIMEOUT, MAX_RETRIES, CACHE_FILE, PASSWORD_LENGTH, SPECIAL_CHARS
+from config import SMB_TIMEOUT, MAX_RETRIES, CACHE_FILE, PASSWORD_LENGTH, SPECIAL_CHARS, MAX_CONCURRENT
 
 
 def generate_password():
@@ -55,32 +54,26 @@ def parse_credentials(text):
 
 
 def change_password_via_samr(ip, domain, username, old_pass, new_pass):
-    for attempt in range(MAX_RETRIES):
-        try:
-            smb = SMBConnection(ip, ip, sess_port=445, timeout=SMB_TIMEOUT)
-            smb.login(username, old_pass, domain if domain else '')
-            
-            rpc = samr.SAMR(smb.get_file('IPC$'))
-            handle = samr.hSamrConnect(rpc, f'\\\\{ip}')['ServerHandle']
-            
-            samr_domain = domain if domain else ip
-            domain_handle = samr.hSamrLookupDomainInSamServer(rpc, handle, samr_domain)['DomainHandle']
-            user_handle = samr.hSamrOpenUser(rpc, domain_handle, 0x0002, username)['UserHandle']
-            
-            samr.hSamrChangePasswordUser(rpc, user_handle, old_pass, new_pass)
-            
-            smb.logoff()
-            return True, "Success (SAMR)"
-            
-        except DCERPCException as e:
-            if attempt == MAX_RETRIES - 1:
-                return False, f"SAMR RPC error: {str(e)}"
-            time.sleep(1)
-        except Exception as e:
-            if attempt == MAX_RETRIES - 1:
-                return False, f"SAMR connection error: {str(e)}"
-            time.sleep(1)
-    return False, "SAMR max retries exceeded"
+    try:
+        smb = SMBConnection(ip, ip, sess_port=445, timeout=SMB_TIMEOUT)
+        smb.login(username, old_pass, domain if domain else '')
+        
+        rpc = samr.SAMR(smb.get_file('IPC$'))
+        handle = samr.hSamrConnect(rpc, f'\\\\{ip}')['ServerHandle']
+        
+        samr_domain = domain if domain else ip
+        domain_handle = samr.hSamrLookupDomainInSamServer(rpc, handle, samr_domain)['DomainHandle']
+        user_handle = samr.hSamrOpenUser(rpc, domain_handle, 0x0002, username)['UserHandle']
+        
+        samr.hSamrChangePasswordUser(rpc, user_handle, old_pass, new_pass)
+        
+        smb.logoff()
+        return True, "Success (SAMR)"
+        
+    except DCERPCException as e:
+        return False, f"SAMR RPC error: {str(e)}"
+    except Exception as e:
+        return False, f"SAMR connection error: {str(e)}"
 
 
 def change_password_via_smb(ip, domain, username, old_pass, new_pass):

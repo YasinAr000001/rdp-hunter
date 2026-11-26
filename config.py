@@ -18,8 +18,9 @@ PASSWORD_LENGTH = 14
 SPECIAL_CHARS = "!@#$%^&*"
 
 # Impacket settings
-SMB_TIMEOUT = 5
-MAX_RETRIES = 2
+SMB_TIMEOUT = 3
+MAX_RETRIES = 1
+MAX_CONCURRENT = 15
 
 # Duplicate tracking
 CACHE_FILE = "caught.json"
