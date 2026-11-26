@@ -96,21 +96,30 @@ async def main():
     await site.start()
     print("[*] Health check server on port", os.getenv('PORT', '8080'))
     
-    if BOT_TOKEN:
-        await client.start(bot_token=BOT_TOKEN)
-        print("[*] Bot connected")
-    elif STRING_SESSION:
-        await client.connect()
-        if not await client.is_user_authorized():
-            print("❌ StringSession invalid/expired")
-            return
-    elif PHONE_NUMBER:
-        await client.start(phone=PHONE_NUMBER)
-    else:
-        await client.start()
-    
-    print("[*] Connected. Running 24/7...")
-    await client.run_until_disconnected()
+    try:
+        if BOT_TOKEN:
+            print("[*] Starting bot...")
+            await client.start(bot_token=BOT_TOKEN)
+            print("[*] Bot connected successfully")
+        elif STRING_SESSION:
+            await client.connect()
+            if not await client.is_user_authorized():
+                print("❌ StringSession invalid/expired")
+                return
+        elif PHONE_NUMBER:
+            await client.start(phone=PHONE_NUMBER)
+        else:
+            await client.start()
+        
+        print("[*] Connected. Running 24/7...")
+        await client.run_until_disconnected()
+    except Exception as e:
+        print(f"❌ STARTUP ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        # Keep health check alive so Railway doesn't restart loop
+        while True:
+            await asyncio.sleep(60)
 
 
 if __name__ == "__main__":
