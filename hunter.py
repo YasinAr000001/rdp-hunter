@@ -7,7 +7,7 @@ from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
 from config import (
     API_ID, API_HASH, CHANNEL_USERNAMES, SESSION_NAME,
-    SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, get_channels
+    SAVED_MESSAGES, PHONE_NUMBER, STRING_SESSION, BOT_TOKEN, get_channels
 )
 from changer import parse_credentials, process_rdp, generate_password
 
@@ -48,7 +48,11 @@ async def main():
         print("❌ No channels configured. Set CHANNEL_USERNAMES env var (comma-separated)")
         return
     
-    if STRING_SESSION:
+    # Priority: BOT_TOKEN > STRING_SESSION > file session
+    if BOT_TOKEN:
+        client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+        print("[*] Using Bot Token")
+    elif STRING_SESSION:
         session = StringSession(STRING_SESSION)
         client = TelegramClient(session, API_ID, API_HASH)
         print("[*] Using StringSession")
@@ -77,7 +81,10 @@ async def main():
     print("[*] rdp-hunter starting...")
     print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}")
     
-    if STRING_SESSION:
+    if BOT_TOKEN:
+        await client.start(bot_token=BOT_TOKEN)
+        print("[*] Bot connected")
+    elif STRING_SESSION:
         await client.connect()
         if not await client.is_user_authorized():
             print("❌ StringSession invalid/expired")

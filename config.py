@@ -7,6 +7,7 @@ SESSION_NAME = os.getenv("SESSION_NAME", "rdp_hunter")
 SAVED_MESSAGES = os.getenv("SAVED_MESSAGES", "me")
 PHONE_NUMBER = os.getenv("PHONE_NUMBER", "")
 STRING_SESSION = os.getenv("STRING_SESSION", "")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 # Password generation
 PASSWORD_LENGTH = 14
