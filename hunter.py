@@ -39,7 +39,8 @@ def format_result(record):
 
 
 async def main():
-    if API_ID == 0 or not API_HASH:
+    # Bot token still needs API_ID/API_HASH for Telethon connection
+    if not BOT_TOKEN and (API_ID == 0 or not API_HASH):
         print("❌ Config missing: set API_ID, API_HASH, CHANNEL_USERNAMES env vars")
         return
     
